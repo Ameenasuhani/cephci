@@ -140,7 +140,8 @@ def run(ceph_cluster, **kw):
                                                         prev_install_version)
         if container_count_fail:
             return container_count_fail
-    return ceph_cluster.check_health(build, timeout=config.get('timeout', 300))
+    cluster_name = config.get('ansi_config').get('cluster')
+    return ceph_cluster.check_health(build, timeout=config.get('timeout', 300), cluster_name=cluster_name)
 
 
 def compare_ceph_versions(pre_upgrade_versions, post_upgrade_versions):

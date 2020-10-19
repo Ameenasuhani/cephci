@@ -92,9 +92,10 @@ def run(ceph_cluster, **kw):
     num_mons = ceph_cluster.ceph_demon_stat['mon']
     test_data['ceph-ansible'] = {'num-osds': num_osds, 'num-mons': num_mons, 'rhbuild': build}
 
+    cluster_name = config.get('ansi_config').get('cluster')
     # create rbd pool used by tests/workunits
-    ceph_cluster.create_rbd_pool(k_and_m)
+    ceph_cluster.create_rbd_pool(k_and_m, cluster_name)
 
-    if ceph_cluster.check_health(build, timeout=timeout) != 0:
+    if ceph_cluster.check_health(build, timeout=timeout, cluster_name=cluster_name) != 0:
         return 1
     return rc

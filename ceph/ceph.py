@@ -525,9 +525,11 @@ class Ceph(object):
                 return metadata
         return None
 
-    def osd_check(self, client):
-
-        out, err = client.exec_command(cmd='sudo ceph -s -f json')
+    def osd_check(self, client, cluster_name=None):
+        cmd = 'sudo ceph -s -f json'
+        if cluster_name:
+            cmd = '{cmd} --cluster {cluster_name}'.format(cmd=cmd, cluster_name=cluster_name)
+        out, err = client.exec_command(cmd=cmd)
         out_json = out.read().decode()
         ceph_status_json = json.loads(out_json)
 
@@ -547,7 +549,7 @@ class Ceph(object):
             logger.info("All osds are up and in")
             return 0
 
-    def check_health(self, rhbuild, client=None, timeout=300):
+    def check_health(self, rhbuild, client=None, timeout=300, cluster_name=None):
         """
         Check if ceph is in healthy state
 
@@ -567,9 +569,12 @@ class Ceph(object):
         lines = None
         pending_states = ['peering', 'activating', 'creating']
         valid_states = ['active+clean']
+        cmd = 'sudo ceph -s'
+        if cluster_name:
+            cmd = '{cmd} --cluster {cluster_name}'.format(cmd=cmd, cluster_name=cluster_name)
 
         while datetime.datetime.now() - starttime <= timeout:
-            out, err = client.exec_command(cmd='sudo ceph -s')
+            out, err = client.exec_command(cmd=cmd)
             lines = out.read().decode()
 
             if not any(state in lines for state in pending_states):
@@ -581,7 +586,7 @@ class Ceph(object):
             logger.error("Valid States are not found in the health check")
             return 1
 
-        self.osd_check(client)
+        self.osd_check(client, cluster_name=cluster_name)
 
         # attempt luminous pattern first, if it returns none attempt jewel pattern
         match = re.search(r"(\d+) daemons, quorum", lines)
@@ -673,7 +678,7 @@ class Ceph(object):
                     p.spawn(node.exec_command, sudo=True, cmd='yum update -y', long_running=True)
                 sleep(10)
 
-    def create_rbd_pool(self, k_and_m):
+    def create_rbd_pool(self, k_and_m, cluster_name=None):
         """
         Generate pools for later testing use
         Args:
@@ -681,27 +686,52 @@ class Ceph(object):
         """
         ceph_mon = self.get_ceph_object('mon')
         if self.rhcs_version >= '3':
-            if k_and_m:
-                pool_name = 'rbd'
-                ceph_mon.exec_command(
-                    cmd='sudo ceph osd erasure-code-profile set %s k=%s m=%s' %
-                        ('ec_profile', k_and_m[0], k_and_m[2]))
-                ceph_mon.exec_command(
-                    cmd='sudo ceph osd pool create %s 64 64 erasure ec_profile' %
-                        pool_name)
-                ceph_mon.exec_command(
-                    cmd='sudo ceph osd pool set %s allow_ec_overwrites true' %
-                        (pool_name))
-                ceph_mon.exec_command(
-                    sudo=True,
-                    cmd='ceph osd pool application enable %s rbd --yes-i-really-mean-it' %
-                        pool_name)
+            if cluster_name:
+                if k_and_m:
+                    pool_name = 'rbd'
+                    ceph_mon.exec_command(
+                        cmd='sudo ceph osd erasure-code-profile set %s k=%s m=%s --cluster %s' %
+                            ('ec_profile', k_and_m[0], k_and_m[2], cluster_name))
+                    ceph_mon.exec_command(
+                        sudo=True,
+                        cmd='ceph osd pool create %s 64 64 erasure ec_profile --cluster %s' %
+                            (pool_name, cluster_name))
+                    ceph_mon.exec_command(
+                        cmd='sudo ceph osd pool set %s allow_ec_overwrites true --cluster %s' %
+                            (pool_name, cluster_name))
+                    ceph_mon.exec_command(
+                        sudo=True,
+                        cmd='ceph osd pool application enable %s rbd --yes-i-really-mean-it --cluster %s' %
+                            (pool_name, cluster_name))
+                else:
+                    ceph_mon.exec_command(
+                        sudo=True, cmd='ceph osd pool create rbd 64 64 --cluster %s' % (cluster_name))
+                    ceph_mon.exec_command(
+                        sudo=True,
+                        cmd='ceph osd pool application enable rbd rbd --yes-i-really-mean-it --cluster %s' %
+                            (cluster_name))
             else:
-                ceph_mon.exec_command(
-                    sudo=True, cmd='ceph osd pool create rbd 64 64 ')
-                ceph_mon.exec_command(
-                    sudo=True,
-                    cmd='ceph osd pool application enable rbd rbd --yes-i-really-mean-it')
+                if k_and_m:
+                    pool_name = 'rbd'
+                    ceph_mon.exec_command(
+                        cmd='sudo ceph osd erasure-code-profile set %s k=%s m=%s' %
+                            ('ec_profile', k_and_m[0], k_and_m[2]))
+                    ceph_mon.exec_command(
+                        cmd='sudo ceph osd pool create %s 64 64 erasure ec_profile' %
+                            pool_name)
+                    ceph_mon.exec_command(
+                        cmd='sudo ceph osd pool set %s allow_ec_overwrites true' %
+                            (pool_name))
+                    ceph_mon.exec_command(
+                        sudo=True,
+                        cmd='ceph osd pool application enable %s rbd --yes-i-really-mean-it' %
+                            pool_name)
+                else:
+                    ceph_mon.exec_command(
+                        sudo=True, cmd='ceph osd pool create rbd 64 64 ')
+                    ceph_mon.exec_command(
+                        sudo=True,
+                        cmd='ceph osd pool application enable rbd rbd --yes-i-really-mean-it')
 
     @staticmethod
     def get_iso_file_url(base_url):
