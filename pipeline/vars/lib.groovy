@@ -83,7 +83,7 @@ def fetchMajorMinorOSVersion(def buildType) {
 
         buildType:  type of the build. Supported types are unsigned-compose,
                     unsigned-container-image, cvp, signed-compose,
-                    signed-container-image
+                    signed-container-image, hotfix
 
         Returns RH-CEPH major version, minor version and OS platform based on buildType
 
@@ -114,6 +114,11 @@ def fetchMajorMinorOSVersion(def buildType) {
         platform = cimsg.tag.name.substring(9,15).toLowerCase()
     }
     if (buildType == 'released') {
+        majorVer = cimsg.tag.name.substring(5,6)
+        minorVer = cimsg.tag.name.substring(7,8)
+        platform = cimsg.tag.name.substring(9,15).toLowerCase()
+    }
+    if(buildType == 'hotfix') {
         majorVer = cimsg.tag.name.substring(5,6)
         minorVer = cimsg.tag.name.substring(7,8)
         platform = cimsg.tag.name.substring(9,15).toLowerCase()
