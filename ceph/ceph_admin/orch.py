@@ -145,9 +145,14 @@ class Orch(
             out = loads(out)
             service = [d for d in out if d.get("service_name") == service_name]
 
-            if service_name not in service and not exist:
+            services = []
+            for service_name in service:
+                outbuf = service_name.split(".")[0]
+                services.append(outbuf)
+
+            if service_name not in services and not exist:
                 return True
-            elif service_name in service and exist:
+            elif service_name in services and exist:
                 return True
             LOG.info("[%s] check for existence: %s, retrying" % (service_name, exist))
 
