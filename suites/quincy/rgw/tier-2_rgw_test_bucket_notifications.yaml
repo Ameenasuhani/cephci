@@ -90,6 +90,7 @@ tests:
       name: notify on multipart upload events with kafka_broker_persistent
       desc: notify on multipart upload events with kafka_broker_persistent
       polarion-id: CEPH-83574066
+      comments: known issue (bz-2149259)
       module: sanity_rgw.py
       config:
         run-on-rgw: true
@@ -125,6 +126,7 @@ tests:
       name: notify on multipart upload events with kafka_none_persistent
       desc: notify on multipart upload events with kafka_none_persistent
       polarion-id: CEPH-83574070
+      comments: known issue (bz-2149259)
       module: sanity_rgw.py
       config:
         run-on-rgw: true
@@ -160,6 +162,7 @@ tests:
       name: notify on multipart upload events with kafka_none
       desc: notify on multipart upload events with kafka_none
       polarion-id: CEPH-83574064
+      comments: known issue (bz-2149259)
       module: sanity_rgw.py
       config:
         run-on-rgw: true
@@ -195,6 +198,7 @@ tests:
       name: notify on multipart upload events with kafka_broker
       desc: notify on multipart upload events with kafka_broker
       polarion-id: CEPH-83574069
+      comments: known issue (bz-2149259)
       module: sanity_rgw.py
       config:
         run-on-rgw: true
